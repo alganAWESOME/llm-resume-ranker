@@ -49,12 +49,12 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
     
     After discussing your reasoning, your final sentence should be 'I prefer Resume A' or 'I prefer Resume B'."""
 
-    def __init__(self):
+    def __init__(self, resume_folder):
+        self.resume_folder = resume_folder
         self.client = anthropic.Anthropic()
 
-    @staticmethod
-    def get_image_data(ranked: bool, image_filename):
-        path = f'./{'ranked' if ranked else 'unranked'}/{image_filename}' # e.g. ./unranked/CV.png
+    def get_image_data(self, ranked: bool, image_filename):
+        path = f'./{self.resume_folder}/{'ranked' if ranked else 'unranked'}/{image_filename}' # e.g. ./unranked/CV.png
 
         with open(path, 'rb') as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
@@ -192,7 +192,7 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
         return self.compare_resumes_with_llm()
     
 if __name__ == "__main__":
-    resume_comparer = LLMResumeComparer()
+    resume_comparer = LLMResumeComparer(resume_folder='uk')
     comparison = resume_comparer.best_of_n(3, 'longbow.png', 'cv0.png')
     print(comparison)
 
