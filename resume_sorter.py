@@ -43,17 +43,94 @@ class ResumeSorter:
             if first_comparison_is_win != comparison_is_win:
                 opposite_results += 1
             else:
-                current_rank += -1 if first_comparison_is_win else +1
                 if current_rank == 0 or current_rank == self.num_ranked_resumes - 1:
                     break
+                current_rank += -1 if first_comparison_is_win else +1
 
         print(f'final rank = {current_rank}')
         return current_rank
+    
+    # ['000-aaaresume2.png', '001-cv_v1.png', '002-mycv.png']
+    # current_rank = 0
+    
+    def find_rank(self):
+        # Initial rank is median
+        self.current_rank = (self.num_ranked_resumes - 1) // 2
+        
+        first_comparison_is_win = None            
+
+        opposite_results = 0
+        while opposite_results < 1:
+            print(f'{self.current_rank=}')
+
+            # Determine initial direction
+            if first_comparison_is_win == None:
+                comparison = self._bon_with_ranked_at_curr(self.current_rank, n=3)
+                first_comparison_is_win = self._is_winner_to_be_ranked(comparison)
+                print('first: win' if first_comparison_is_win else 'first: loss')
+                # Increment or decrement rank
+                done = self._incr_rank(first_comparison_is_win)
+                if done:
+                    break
+                continue
+
+            # Make comparison between two resumes
+            comparison = {'winner': None}
+            while comparison['winner'] == None:
+                comparison = self._compare_with_ranked_at_curr(self.current_rank)
+
+            comparison_is_win = self._is_winner_to_be_ranked(comparison)
+            print('win' if comparison_is_win else 'loss')
+
+            # If direction seems to change, do best of 3 to confirm
+            if first_comparison_is_win != comparison_is_win:
+                comparison = self._bon_with_ranked_at_curr(self.current_rank, n=3)
+                comparison_is_win = self._is_winner_to_be_ranked(comparison)
+                # If confirmed comparison did in fact change, end loop
+                if comparison_is_win != first_comparison_is_win:
+                    self._incr_rank(comparison_is_win)
+                    break
+                # Otherwise continue
+
+            # Increment or decrement rank            
+            done = self._incr_rank(first_comparison_is_win)
+            if done:
+                break
+
+        print(f'final rank = {self.current_rank}')
+        return self.current_rank # todo: change so that this is just accessed not returned
+    
+    def _incr_rank(self, comparison_is_win):
+        """
+        Increments / decrements `self.current_rank` based on whether the resume won.
+        Returns `True` or `False` meaning "are we done incrementing".
+        """
+        self.current_rank += -1 if comparison_is_win else +1
+        if self.current_rank == -1:
+            self.current_rank = 0
+            return True
+        if self.current_rank == self.num_ranked_resumes:
+            return True
+        
+        return False
+
+
+    def _bon_with_ranked_at_curr(self, current_rank, n=3):
+        """Best of n comparison with ranked resume at rank `current_rank`"""
+        ranked_resume_at_curr = self.ranked_filenames[current_rank]
+        print(f'COMPARISON: {self.to_be_ranked_filename} vs {ranked_resume_at_curr}')
+        comparison = self.resume_comparer.best_of_n(n, self.to_be_ranked_filename, ranked_resume_at_curr)
+        print(comparison)
+        input('Continue?')
+        return comparison
 
     def _compare_with_ranked_at_curr(self, current_rank):
         """Compare resume with ranked resume at rank `current_rank`"""
         ranked_resume_at_curr = self.ranked_filenames[current_rank]
+        print(f'COMPARISON: {self.to_be_ranked_filename} vs {ranked_resume_at_curr}')
         comparison = self.resume_comparer.main(self.to_be_ranked_filename, ranked_resume_at_curr)
+        print(comparison)
+        input('Continue?')
         return comparison
     
     @staticmethod
@@ -72,8 +149,6 @@ class ResumeSorter:
 
         # Move from unranked folder to ranked folder
         os.rename(f'./unranked/{self.to_be_ranked_filename}', f'./ranked/{new_filename}')
-
-        print(f'mv ./unranked/{self.to_be_ranked_filename} ./ranked/{new_filename}')
 
     def unrank_files(self, idx_low=None, idx_high=None):
         """Move ranked files with index in `range(idx_low, idx_high)` back into the unranked folder."""
@@ -140,6 +215,27 @@ if __name__ == '__main__':
     # sorter.insert_all()
     sorter.unrank_files()
     sorter.insert_all()
+
+    def find_boundary(array):
+        # array = [true true true true false false]
+        # want to return index of last `true`
+
+        l, r = 0, len(array) - 1
+
+        while l < r:
+            mid = (l + r) // 2
+
+            if array[mid] == True and array[mid + 1] == False:
+                return mid
+            elif array[mid] == True and array[mid + 1] == True:
+                l = mid
+            elif array[mid] == False and array[mid + 1] == False:
+                r = mid
+
+        # array = [true true true]
+        # l = 0
+        # r = 2
+        # mid = 1
 
 """
 TODO

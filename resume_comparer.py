@@ -4,14 +4,50 @@ from random import randint
 import os
 
 class LLMResumeComparer:
-    PROMPT = """"You are an expert technical recruiter at a big tech company looking to hire graduate software engineers. Your task is to evaluate the following two early-career software engineer resumes. Only after discussing your reasoning, state which resume you prefer. You may refer to the resumes as Resume A and Resume B respectively.
+    PROMPT = """
+You are an expert in hiring and evaluating software engineers. You have two resumes in front of you, and you need to compare them to determine which candidate is more suitable for a software engineering position. Focus on the following aspects of each resume:
+
+1. Professional Experience
+Look at the job titles, companies, duration of employment, and key responsibilities.
+Assess the relevance and impact of their roles and achievements.
+
+2. Skills and Technologies
+Identify the programming languages, tools, frameworks, and technologies each candidate is proficient in.
+Evaluate the depth and breadth of their technical skills.
+
+3. Projects
+Examine the projects listed, including personal, academic, and professional projects.
+Consider the complexity, innovation, and relevance of these projects to the role they are applying for.
+
+4. Education
+Review their educational background, including degrees, institutions, and relevant coursework.
+Take note of any honors or exceptional academic achievements.
+
+5. Additional Information
+Check for any additional skills, languages spoken, certifications, or interests that might be relevant.
+
+6. Overall Impression
+
+At the start, you should only state your reasoning, without stating your final answer. Only at the very end, you MUST state "I prefer Resume A" or "I prefer Resume B".
+"""
+
+    PROMPT_alt = """You are an expert technical recruiter at a big tech company looking to hire graduate software engineers. Your task is to evaluate the following two early-career software engineer resumes. Only after discussing your reasoning, state which resume you prefer. You may refer to the resumes as Resume A and Resume B respectively.
 
 Criteria for evaluation:
-- Technical depth: how much technical depth and experience does the candidate demonstrate? You should mostly discard non-software engineering experience, e.g. retail or marketing.
+- Technical depth: how much technical depth and experience does the candidate demonstrate? You should mostly discard non-software engineering experience, e.g. retail or marketing. Furthermore, you must discard A-Level qualifications; they simply do not matter.
 - Clarity of communication: is it easy to understand what exactly the candidate worked on, and what the impact was? Is the candidate using buzzwords that sound out of place?
 - Appearance: the resume should look professional and simple, minimising flashy graphics as much as possible. Is there attention to detail, e.g. good whitespace and flawless spelling?
 - University: universities should be ranked as follows: Oxford/Cambridge, Imperial, Warwick/UCL, other Russell Group, non-Russell Group. Note that some resumes may anonymise their university.
-- Miscellaneous: any other observation as you see fit."""
+- Miscellaneous: any other observation as you see fit.
+
+You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
+
+    # This prompt works a lot worse for some reason.
+    PROMPT_alt2 = """You are an expert technical recruiter at a big tech company looking to hire early-career software engineers. Your task is to evaluate the following two resumes, called Resume A and Resume B respectively.
+    
+    Prioritize technical depth and clarity of communication; which candidate's technical experience is more impressive, impactful and clearly communicated?
+    
+    After discussing your reasoning, your final sentence should be 'I prefer Resume A' or 'I prefer Resume B'."""
 
     def __init__(self):
         self.client = anthropic.Anthropic()
@@ -108,6 +144,9 @@ Criteria for evaluation:
         else:
             winner = None
             print("WARNING: Claude did not state winner")
+            print('here is what it said:')
+            print(message.content[0].text)
+            input('Press Any Key To Continue')
         
         return {'Resume A': self.current_resumes['Resume A']['filename'],
                  'Resume B': self.current_resumes['Resume B']['filename'],
@@ -115,11 +154,50 @@ Criteria for evaluation:
                  'to_be_ranked_resume': 'Resume A' if self.to_be_ranked_is_A else 'Resume B',
                  'claude_response': message.content[0].text}
 
+    def best_of_n(self, n, unranked_filename, ranked_filename):
+        """Make LLM compare resumes best-of-n style.
+        The return format is identical to a regular comparison for now."""
+        if n % 2 == 0:
+            raise ValueError('n must be odd for best of n')
+        wins_required = (n + 1) // 2
+
+        print(f"Starting best of {n} comparison")
+
+        self.construct_resumes_dict(unranked_filename, ranked_filename)
+
+        to_be_ranked_wins, to_be_ranked_losses = 0, 0
+
+        # Store one comparison where to_be_ranked wins, one where it loses
+        win_comparison, loss_comparison = None, None
+        
+        for _ in range(n):
+            comparison = self.compare_resumes_with_llm()
+            if comparison['to_be_ranked_resume'] == comparison['winner']:
+                to_be_ranked_wins += 1
+                win_comparison = comparison
+            else:
+                to_be_ranked_losses += 1
+                loss_comparison = comparison
+
+            if to_be_ranked_wins == wins_required:
+                print(f'Win; wins={to_be_ranked_wins}, losses={to_be_ranked_losses}')
+                return win_comparison
+            
+            if to_be_ranked_losses == wins_required:
+                print(f'Loss; wins={to_be_ranked_wins}, losses={to_be_ranked_losses}')
+                return loss_comparison
+
     def main(self, unranked_filename, ranked_filename):
         self.construct_resumes_dict(unranked_filename, ranked_filename)
         return self.compare_resumes_with_llm()
     
 if __name__ == "__main__":
     resume_comparer = LLMResumeComparer()
-    comparison = resume_comparer.main('CV_V1_11-1.png', '002-CV.jpg')
+    comparison = resume_comparer.best_of_n(3, 'longbow.png', 'cv0.png')
     print(comparison)
+
+# folder support
+# the test folder will have ranked and unranked folders
+# these folders will have the same shit
+# i will manually rank a few 'interesting' resumes that may be hard to rank
+# write unit tests

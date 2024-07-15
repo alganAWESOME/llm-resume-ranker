@@ -22,8 +22,8 @@ class RankString:
     
     @staticmethod
     def extract_rankstring(filename):
-        split = filename.split('-')
-        return split[0], ''.join(split[1:])
+        """123-my_filename.png -> (123, my_filename.png)"""
+        return filename[:3], filename[4:]
     
     def increment_ranked_filename(self, filename, by=1):
         rankstring, og_filename = self.extract_rankstring(filename)
