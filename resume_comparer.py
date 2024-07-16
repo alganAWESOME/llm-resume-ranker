@@ -4,7 +4,35 @@ from random import randint
 import os
 
 class LLMResumeComparer:
-    PROMPT = """
+    PROMPT = """You are an expert software engineering recruiter tasked with comparing two resumes for an early-career software engineering position. Your goal is to analyze both resumes thoroughly and determine which candidate would be a better fit for the role.
+
+Please follow these steps:
+
+1. Carefully review both resumes, paying attention to education, work experience, projects, technical skills, and any other relevant information.
+
+2. For each resume, list the key strengths and potential weaknesses or areas of concern.
+
+3. Compare the resumes based on the following criteria:
+   - Relevance and recency of work experience
+   - Depth and breadth of technical skills
+   - Education and academic performance
+   - Project experience and its relevance to software engineering
+   - Evidence of problem-solving abilities and initiative
+   - Any unique qualities or experiences that stand out
+
+4. Consider how well each candidate's background aligns with typical requirements for an early-career software engineering role.
+
+5. Weigh the pros and cons of each resume, considering which candidate is likely to perform better in the role and have more potential for growth.
+
+6. After thorough analysis and comparison, form your conclusion about which resume you prefer.
+
+7. Explain your reasoning in detail, covering all the points you considered in your decision-making process.
+
+8. Only after providing your complete analysis and reasoning, state your final decision by writing either "I prefer Resume A" or "I prefer Resume B" as the very last line of your response.
+
+Remember, your goal is to provide a comprehensive comparison and justification for your choice before stating your final preference."""
+
+    PROMPTlol = """
 You are an expert in hiring and evaluating software engineers. You have two resumes in front of you, and you need to compare them to determine which candidate is more suitable for a software engineering position. Focus on the following aspects of each resume:
 
 1. Professional Experience
@@ -42,15 +70,13 @@ Criteria for evaluation:
 
 You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
 
-    # This prompt works a lot worse for some reason.
-    PROMPT_alt2 = """You are an expert technical recruiter at a big tech company looking to hire early-career software engineers. Your task is to evaluate the following two resumes, called Resume A and Resume B respectively.
-    
-    Prioritize technical depth and clarity of communication; which candidate's technical experience is more impressive, impactful and clearly communicated?
-    
-    After discussing your reasoning, your final sentence should be 'I prefer Resume A' or 'I prefer Resume B'."""
+    HAIKU = "claude-3-haiku-20240307"
+    SONNET = "claude-3-5-sonnet-20240620"
 
-    def __init__(self, resume_folder):
+    def __init__(self, resume_folder, model='sonnet', temperature=0):
         self.resume_folder = resume_folder
+        self.model = model
+        self.temperature = temperature
         self.client = anthropic.Anthropic()
 
     def get_image_data(self, ranked: bool, image_filename):
@@ -67,38 +93,39 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
         get_image_type = lambda image_filename: 'jpeg' if image_filename.split('.')[1] == 'jpg' else 'png'
         ranked_type, unranked_type = get_image_type(ranked_filename), get_image_type(unranked_filename)
 
-        # Randomise which one will be called Resume A and Resume B
+        # Construct dictionary containing the two resumes
         resumes = {'Resume A': {}, 'Resume B': {}}
-        my_randint = randint(0, 1)
-        if my_randint == 0:
-            self.to_be_ranked_is_A = False
-            resumes['Resume A']['filename'] = ranked_filename
-            resumes['Resume A']['data'] = ranked_data
-            resumes['Resume A']['type'] = ranked_type
-            resumes['Resume B']['filename'] = unranked_filename
-            resumes['Resume B']['data'] = unranked_data
-            resumes['Resume B']['type'] = unranked_type
-        else:
-            self.to_be_ranked_is_A = True
-            resumes['Resume B']['filename'] = ranked_filename
-            resumes['Resume B']['data'] = ranked_data
-            resumes['Resume B']['type'] = ranked_type
-            resumes['Resume A']['filename'] = unranked_filename
-            resumes['Resume A']['data'] = unranked_data
-            resumes['Resume A']['type'] = unranked_type
+        self.to_be_ranked_is_A = False
+        resumes['Resume A']['filename'] = ranked_filename
+        resumes['Resume A']['data'] = ranked_data
+        resumes['Resume A']['type'] = ranked_type
+        resumes['Resume B']['filename'] = unranked_filename
+        resumes['Resume B']['data'] = unranked_data
+        resumes['Resume B']['type'] = unranked_type
 
         self.current_resumes = resumes
 
+    def randomise_resumes(self):
+        rand_int = randint(0, 1)
+        # if rand_int is 1 swap resume A and B
+        if rand_int:
+            temp = self.current_resumes['Resume A']
+            self.current_resumes['Resume A'] = self.current_resumes['Resume B']
+            self.current_resumes['Resume B'] = temp
+            self.to_be_ranked_is_A = not self.to_be_ranked_is_A
+
     def compare_resumes_with_llm(self):
+        self.randomise_resumes()
+
         mediatype_A = f"image/{self.current_resumes['Resume A']['type']}"
         mediatype_B = f"image/{self.current_resumes['Resume B']['type']}"
 
         print("Comparing resumes...")
 
         message = self.client.messages.create(
-        model="claude-3-haiku-20240307",
-        max_tokens=1000,
-        temperature=0,
+        model = self.SONNET if self.model == 'sonnet' else self.HAIKU,
+        max_tokens=2000,
+        temperature=self.temperature,
         messages=[
             {
 
@@ -179,6 +206,8 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
                 to_be_ranked_losses += 1
                 loss_comparison = comparison
 
+            print(comparison)
+
             if to_be_ranked_wins == wins_required:
                 print(f'Win; wins={to_be_ranked_wins}, losses={to_be_ranked_losses}')
                 return win_comparison
@@ -192,12 +221,14 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
         return self.compare_resumes_with_llm()
     
 if __name__ == "__main__":
-    resume_comparer = LLMResumeComparer(resume_folder='uk')
-    comparison = resume_comparer.best_of_n(3, 'longbow.png', 'cv0.png')
-    print(comparison)
+    resume_comparer = LLMResumeComparer(resume_folder='test_resumes', model='sonnet', temperature=0)
+    comparison = resume_comparer.best_of_n(3, '000-aaaresume2.png', '001-resume_test_update.jpg')
 
-# folder support
-# the test folder will have ranked and unranked folders
-# these folders will have the same shit
-# i will manually rank a few 'interesting' resumes that may be hard to rank
-# write unit tests
+# Unit testing done
+# TODO: Increase model's response variety for best of n
+# TODO: Fix `resume_sorter.py`
+
+# ideas for increasing response variety
+"""
+- increase temperature even more (need to make sure that obvious cases do not mess up)
+"""

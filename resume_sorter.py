@@ -114,7 +114,6 @@ class ResumeSorter:
         
         return False
 
-
     def _bon_with_ranked_at_curr(self, current_rank, n=3):
         """Best of n comparison with ranked resume at rank `current_rank`"""
         ranked_resume_at_curr = self.ranked_filenames[current_rank]
@@ -215,28 +214,6 @@ if __name__ == '__main__':
     # sorter.insert_all()
     sorter.unrank_files()
     sorter.insert_all()
-
-    def find_boundary(array):
-        # array = [true true true true false false]
-        # want to return index of last `true`
-
-        l, r = 0, len(array) - 1
-
-        while l < r:
-            mid = (l + r) // 2
-
-            if array[mid] == True and array[mid + 1] == False:
-                return mid
-            elif array[mid] == True and array[mid + 1] == True:
-                l = mid
-            elif array[mid] == False and array[mid + 1] == False:
-                r = mid
-
-        # array = [true true true]
-        # l = 0
-        # r = 2
-        # mid = 1
-
 """
 TODO
 - Best of n at the start and end of comparisons
