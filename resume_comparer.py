@@ -224,11 +224,10 @@ if __name__ == "__main__":
     resume_comparer = LLMResumeComparer(resume_folder='test_resumes', model='sonnet', temperature=0)
     comparison = resume_comparer.best_of_n(3, '000-aaaresume2.png', '001-resume_test_update.jpg')
 
-# Unit testing done
-# TODO: Increase model's response variety for best of n
-# TODO: Fix `resume_sorter.py`
-
-# ideas for increasing response variety
 """
-- increase temperature even more (need to make sure that obvious cases do not mess up)
+BACKLOG
+
+- write a function that pretty-prints a `comparison` dictionary
+- modify best of n comparison so that it accepts an initial value for wins / losses
+- create timers + api cost calculators
 """

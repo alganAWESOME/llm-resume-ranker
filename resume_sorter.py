@@ -3,8 +3,9 @@ from rankstring import RankString
 import os
 
 class ResumeSorter:
-    def __init__(self):
-        self.resume_comparer = LLMResumeComparer()
+    def __init__(self, resume_folder):
+        self.resume_comparer = LLMResumeComparer(resume_folder)
+        self.resume_folder = resume_folder
 
         # Store comparisons
         self.comparisons = []
@@ -119,8 +120,7 @@ class ResumeSorter:
         ranked_resume_at_curr = self.ranked_filenames[current_rank]
         print(f'COMPARISON: {self.to_be_ranked_filename} vs {ranked_resume_at_curr}')
         comparison = self.resume_comparer.best_of_n(n, self.to_be_ranked_filename, ranked_resume_at_curr)
-        print(comparison)
-        input('Continue?')
+        input('Best of n complete. Continue?')
         return comparison
 
     def _compare_with_ranked_at_curr(self, current_rank):
@@ -141,13 +141,13 @@ class ResumeSorter:
 
         # Derank everything with rank >= `rank`
         for filename in self.ranked_filenames[rank:]:
-            os.rename(f'./ranked/{filename}', f'./ranked/{self.rank_string.increment_ranked_filename(filename)}')
+            os.rename(f'./{self.resume_folder}/ranked/{filename}', f'./{self.resume_folder}/ranked/{self.rank_string.increment_ranked_filename(filename)}')
 
         # Add the rank to the to-be-ranked filename
         new_filename = self.rank_string.add_rankstring_to_filename(self.to_be_ranked_filename, rank)
 
         # Move from unranked folder to ranked folder
-        os.rename(f'./unranked/{self.to_be_ranked_filename}', f'./ranked/{new_filename}')
+        os.rename(f'./{self.resume_folder}/unranked/{self.to_be_ranked_filename}', f'./{self.resume_folder}/ranked/{new_filename}')
 
     def unrank_files(self, idx_low=None, idx_high=None):
         """Move ranked files with index in `range(idx_low, idx_high)` back into the unranked folder."""
@@ -171,7 +171,7 @@ class ResumeSorter:
         for i in range(idx_low, idx_high):
             filename = self.ranked_filenames[i]
             new_filename = self.rank_string.rm_rankstring_from_filename(filename)
-            os.rename(f'./ranked/{filename}', f'./unranked/{new_filename}')
+            os.rename(f'./{self.resume_folder}/ranked/{filename}', f'./{self.resume_folder}/unranked/{new_filename}')
             print(f'Unranked {filename}')
 
         # Update the rank of the remaining files
@@ -182,11 +182,11 @@ class ResumeSorter:
         for i in range(idx_low, self.num_ranked_resumes):
             filename = self.ranked_filenames[i]
             new_filename = self.rank_string.decrement_ranked_filename(filename, by = idx_high - idx_low)
-            os.rename(f'./ranked/{filename}', f'./ranked/{new_filename}')
+            os.rename(f'./{self.resume_folder}/ranked/{filename}', f'./{self.resume_folder}/ranked/{new_filename}')
     
     def read_ranked_folder(self):
-        self.num_ranked_resumes = len(os.listdir('./ranked'))
-        self.ranked_filenames = os.listdir('./ranked')
+        self.num_ranked_resumes = len(os.listdir(f'./{self.resume_folder}/ranked'))
+        self.ranked_filenames = os.listdir(f'./{self.resume_folder}/ranked')
         self.ranked_filenames.sort()
 
     def insert(self, to_be_ranked_filename):
@@ -196,7 +196,7 @@ class ResumeSorter:
         # If ranked folder empty, initialise
         if self.num_ranked_resumes == 0:
             new_filename = self.rank_string.add_rankstring_to_filename(to_be_ranked_filename, rank=0)
-            os.rename(f'./unranked/{to_be_ranked_filename}', f'./ranked/{new_filename}')
+            os.rename(f'./{self.resume_folder}/unranked/{to_be_ranked_filename}', f'./{self.resume_folder}/ranked/{new_filename}')
             return
 
         # Insert
@@ -206,19 +206,25 @@ class ResumeSorter:
         self.insert_unranked_file(rank)
 
     def insert_all(self):
-        for filename in os.listdir('./unranked'):
+        for filename in os.listdir(f'./{self.resume_folder}/unranked'):
             self.insert(filename)
 
 if __name__ == '__main__':
-    sorter = ResumeSorter()
+    sorter = ResumeSorter(resume_folder='resumes2')
     # sorter.insert_all()
     sorter.unrank_files()
     sorter.insert_all()
-"""
-TODO
-- Best of n at the start and end of comparisons
-- implement JSON support
-- Function which compares everything in unranked (easy) DONE
 
-longterm: evaluation strategy?
+"""
+BACKLOG
+
+- Implement JSON support
+- Reduce repeated code when making `os.` calls
+"""
+
+"""
+Current goal: correctly implement `find_rank()`
+- implement folder support (really quick)
+- 
+
 """
