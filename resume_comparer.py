@@ -1,7 +1,6 @@
 import anthropic
 import base64
 from random import randint
-import os
 
 class LLMResumeComparer:
     PROMPT = """You are an expert software engineering recruiter tasked with comparing two resumes for an early-career software engineering position. Your goal is to analyze both resumes thoroughly and determine which candidate would be a better fit for the role.
@@ -227,7 +226,7 @@ if __name__ == "__main__":
 """
 BACKLOG
 
-- write a function that pretty-prints a `comparison` dictionary
+- write a function that pretty-prints a `comparison` dictionary (ideally make a `Comparison` object)
 - modify best of n comparison so that it accepts an initial value for wins / losses
 - create timers + api cost calculators
 """

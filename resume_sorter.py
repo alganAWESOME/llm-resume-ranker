@@ -3,9 +3,10 @@ from rankstring import RankString
 import os
 
 class ResumeSorter:
-    def __init__(self, resume_folder):
+    def __init__(self, resume_folder, debug=False):
         self.resume_comparer = LLMResumeComparer(resume_folder)
         self.resume_folder = resume_folder
+        self.debug = debug
 
         # Store comparisons
         self.comparisons = []
@@ -13,55 +14,13 @@ class ResumeSorter:
         self.rank_string = RankString()
 
     def find_rank(self):
-        """
-        Start by comparing resume with median ranked resume.
-
-        Keep moving resume in that direction until the opposite happens twice,
-        e.g. if it wins at median, keep ranking it better and better
-        until it loses twice to a resume.
-        """
-        # Initial rank is median
-        current_rank = (self.num_ranked_resumes - 1) // 2
-        
-        first_comparison_is_win = None
-
-        opposite_results = 0
-        while opposite_results < 1:
-            print(f'{current_rank=}')
-
-            # Make comparison between two resumes
-            comparison = {'winner': None}
-            while comparison['winner'] == None:
-                comparison = self._compare_with_ranked_at_curr(current_rank)
-
-            comparison_is_win = self._is_winner_to_be_ranked(comparison)
-            print('to-be-ranked won' if comparison_is_win else 'to-be-ranked lost')
-
-            # Determine initial direction
-            if first_comparison_is_win == None:
-                first_comparison_is_win = comparison_is_win
-
-            if first_comparison_is_win != comparison_is_win:
-                opposite_results += 1
-            else:
-                if current_rank == 0 or current_rank == self.num_ranked_resumes - 1:
-                    break
-                current_rank += -1 if first_comparison_is_win else +1
-
-        print(f'final rank = {current_rank}')
-        return current_rank
-    
-    # ['000-aaaresume2.png', '001-cv_v1.png', '002-mycv.png']
-    # current_rank = 0
-    
-    def find_rank(self):
         # Initial rank is median
         self.current_rank = (self.num_ranked_resumes - 1) // 2
         
         first_comparison_is_win = None            
 
-        opposite_results = 0
-        while opposite_results < 1:
+        done = False
+        while not done:
             print(f'{self.current_rank=}')
 
             # Determine initial direction
@@ -71,8 +30,6 @@ class ResumeSorter:
                 print('first: win' if first_comparison_is_win else 'first: loss')
                 # Increment or decrement rank
                 done = self._incr_rank(first_comparison_is_win)
-                if done:
-                    break
                 continue
 
             # Make comparison between two resumes
@@ -89,14 +46,13 @@ class ResumeSorter:
                 comparison_is_win = self._is_winner_to_be_ranked(comparison)
                 # If confirmed comparison did in fact change, end loop
                 if comparison_is_win != first_comparison_is_win:
-                    self._incr_rank(comparison_is_win)
+                    if not comparison_is_win:
+                        self._incr_rank(comparison_is_win)
                     break
                 # Otherwise continue
 
             # Increment or decrement rank            
             done = self._incr_rank(first_comparison_is_win)
-            if done:
-                break
 
         print(f'final rank = {self.current_rank}')
         return self.current_rank # todo: change so that this is just accessed not returned
@@ -206,25 +162,28 @@ class ResumeSorter:
         self.insert_unranked_file(rank)
 
     def insert_all(self):
-        for filename in os.listdir(f'./{self.resume_folder}/unranked'):
+        for filename in os.listdir(f'./{self.resume_folder}/unranked'):  
             self.insert(filename)
+            if self.debug:
+                self.read_ranked_folder()
+                print(f'ranked_files={self.ranked_filenames}')
 
 if __name__ == '__main__':
-    sorter = ResumeSorter(resume_folder='resumes2')
+    sorter = ResumeSorter(resume_folder='resumes_test_sorter')
     # sorter.insert_all()
     sorter.unrank_files()
-    sorter.insert_all()
+    # sorter.insert_all()
 
 """
 BACKLOG
 
 - Implement JSON support
 - Reduce repeated code when making `os.` calls
+- Ability to create folders
 """
 
 """
 Current goal: correctly implement `find_rank()`
-- implement folder support (really quick)
 - 
 
 """
