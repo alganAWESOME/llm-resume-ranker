@@ -116,6 +116,9 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
     def compare_resumes_with_llm(self):
         self.randomise_resumes()
 
+        # print(f'name={self.current_resumes['Resume A']['filename']}, type={self.current_resumes['Resume A']['type']}')
+        # print(f'name={self.current_resumes['Resume B']['filename']}, type={self.current_resumes['Resume B']['type']}')
+
         mediatype_A = f"image/{self.current_resumes['Resume A']['type']}"
         mediatype_B = f"image/{self.current_resumes['Resume B']['type']}"
 
@@ -180,6 +183,15 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
                  'to_be_ranked_resume': 'Resume A' if self.to_be_ranked_is_A else 'Resume B',
                  'claude_response': message.content[0].text}
 
+    @staticmethod
+    def pretty_print(comparison):
+        """Pretty prints comparison dictionary."""
+        for key, value in comparison.items():
+            if key == 'claude_response':
+                print(f'Claude:\n{value}')
+            else:
+                print(f'{key}: {value}')
+    
     def best_of_n(self, n, unranked_filename, ranked_filename):
         """Make LLM compare resumes best-of-n style.
         The return format is identical to a regular comparison for now."""
@@ -205,7 +217,7 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
                 to_be_ranked_losses += 1
                 loss_comparison = comparison
 
-            print(comparison)
+            self.pretty_print(comparison)
 
             if to_be_ranked_wins == wins_required:
                 print(f'Win; wins={to_be_ranked_wins}, losses={to_be_ranked_losses}')

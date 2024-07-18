@@ -76,7 +76,8 @@ class ResumeSorter:
         ranked_resume_at_curr = self.ranked_filenames[current_rank]
         print(f'COMPARISON: {self.to_be_ranked_filename} vs {ranked_resume_at_curr}')
         comparison = self.resume_comparer.best_of_n(n, self.to_be_ranked_filename, ranked_resume_at_curr)
-        input('Best of n complete. Continue?')
+        if self.debug:
+            input('Best of n complete. Continue?')
         return comparison
 
     def _compare_with_ranked_at_curr(self, current_rank):
@@ -84,8 +85,9 @@ class ResumeSorter:
         ranked_resume_at_curr = self.ranked_filenames[current_rank]
         print(f'COMPARISON: {self.to_be_ranked_filename} vs {ranked_resume_at_curr}')
         comparison = self.resume_comparer.main(self.to_be_ranked_filename, ranked_resume_at_curr)
-        print(comparison)
-        input('Continue?')
+        self.resume_comparer.pretty_print(comparison)
+        if self.debug:
+            input('Continue?')
         return comparison
     
     @staticmethod
@@ -169,21 +171,22 @@ class ResumeSorter:
                 print(f'ranked_files={self.ranked_filenames}')
 
 if __name__ == '__main__':
-    sorter = ResumeSorter(resume_folder='resumes_test_sorter')
-    # sorter.insert_all()
-    sorter.unrank_files()
-    # sorter.insert_all()
+    sorter = ResumeSorter(resume_folder='resumes')
+    # sorter.unrank_files(11, 12)
+    sorter.insert('aaaresume2.png')
 
 """
 BACKLOG
 
+- Dynamic switching between haiku and sonnet
+- JSON file that counts # of api calls
 - Implement JSON support
 - Reduce repeated code when making `os.` calls
 - Ability to create folders
 """
 
 """
-Current goal: correctly implement `find_rank()`
+Current goal: correctly implement `find_rank()` DONE
 - 
 
 """
