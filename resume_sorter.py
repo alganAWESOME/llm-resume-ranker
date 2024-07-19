@@ -3,6 +3,13 @@ from rankstring import RankString
 import os
 
 class ResumeSorter:
+    """
+    Repeatedly makes calls to LLMResumeComparer, using insertion sort
+    to rank resumes in the 'unranked' folder.
+
+    Parameters:
+    - resume_folder (str): name of the folder that contains 'ranked', 'unranked' and 'storage' folders.
+    """
     def __init__(self, resume_folder, debug=False):
         self.resume_comparer = LLMResumeComparer(resume_folder)
         self.resume_folder = resume_folder
@@ -14,6 +21,13 @@ class ResumeSorter:
         self.rank_string = RankString()
 
     def find_rank(self):
+        """
+        Algorithm:
+        1. Sonnet (best of 3) to determine initial direction of resume
+        2. Keep using Haiku (best of 1) until direction seems to change
+        3. Confirm direction change with Sonnet (best of 1)
+        """
+
         # Initial rank is median
         self.current_rank = (self.num_ranked_resumes - 1) // 2
         
@@ -42,7 +56,7 @@ class ResumeSorter:
 
             # If direction seems to change, do best of 3 to confirm
             if first_comparison_is_win != comparison_is_win:
-                comparison = self._bon_with_ranked_at_curr(self.current_rank, n=3)
+                comparison = self._bon_with_ranked_at_curr(self.current_rank, n=1)
                 comparison_is_win = self._is_winner_to_be_ranked(comparison)
                 # If confirmed comparison did in fact change, end loop
                 if comparison_is_win != first_comparison_is_win:
@@ -75,6 +89,8 @@ class ResumeSorter:
         """Best of n comparison with ranked resume at rank `current_rank`"""
         ranked_resume_at_curr = self.ranked_filenames[current_rank]
         print(f'COMPARISON: {self.to_be_ranked_filename} vs {ranked_resume_at_curr}')
+        self.resume_comparer.model = 'sonnet'
+        print('model=sonnet')
         comparison = self.resume_comparer.best_of_n(n, self.to_be_ranked_filename, ranked_resume_at_curr)
         if self.debug:
             input('Best of n complete. Continue?')
@@ -84,6 +100,8 @@ class ResumeSorter:
         """Compare resume with ranked resume at rank `current_rank`"""
         ranked_resume_at_curr = self.ranked_filenames[current_rank]
         print(f'COMPARISON: {self.to_be_ranked_filename} vs {ranked_resume_at_curr}')
+        self.resume_comparer.model = 'haiku'
+        print('model=haiku')
         comparison = self.resume_comparer.main(self.to_be_ranked_filename, ranked_resume_at_curr)
         self.resume_comparer.pretty_print(comparison)
         if self.debug:
@@ -169,11 +187,13 @@ class ResumeSorter:
             if self.debug:
                 self.read_ranked_folder()
                 print(f'ranked_files={self.ranked_filenames}')
+        
+        print(f'num_calls={self.resume_comparer.num_calls}')
 
 if __name__ == '__main__':
-    sorter = ResumeSorter(resume_folder='resumes')
+    sorter = ResumeSorter(resume_folder='resumes_us')
     # sorter.unrank_files(11, 12)
-    sorter.insert('aaaresume2.png')
+    sorter.insert_all()
 
 """
 BACKLOG

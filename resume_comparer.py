@@ -78,6 +78,8 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
         self.temperature = temperature
         self.client = anthropic.Anthropic()
 
+        self.num_calls = {'haiku': 0, 'sonnet': 0}
+
     def get_image_data(self, ranked: bool, image_filename):
         path = f'./{self.resume_folder}/{'ranked' if ranked else 'unranked'}/{image_filename}' # e.g. ./unranked/CV.png
 
@@ -106,7 +108,7 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
 
     def randomise_resumes(self):
         rand_int = randint(0, 1)
-        # if rand_int is 1 swap resume A and B
+        # if rand_int is 1 swap resume A and B  
         if rand_int:
             temp = self.current_resumes['Resume A']
             self.current_resumes['Resume A'] = self.current_resumes['Resume B']
@@ -114,6 +116,9 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
             self.to_be_ranked_is_A = not self.to_be_ranked_is_A
 
     def compare_resumes_with_llm(self):
+        # Update num_calls
+        self.num_calls[self.model] += 1
+
         self.randomise_resumes()
 
         # print(f'name={self.current_resumes['Resume A']['filename']}, type={self.current_resumes['Resume A']['type']}')
