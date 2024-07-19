@@ -227,7 +227,7 @@ class ResumeSorter:
 
 if __name__ == '__main__':
     sorter = ResumeSorter(resume_folder='resumes_us')
-    # sorter.unrank_files(1, 2)
+    sorter.unrank_files(0,1)
     sorter.insert_all()
 
 """

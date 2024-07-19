@@ -20,15 +20,21 @@ Please follow these steps:
    - Evidence of problem-solving abilities and initiative
    - Any unique qualities or experiences that stand out
 
-4. Consider how well each candidate's background aligns with typical requirements for an early-career software engineering role.
+4. Furthermore, the following are negative criteria, which should be discarded or treated as less relevant factors:
+   - Certifications, such as those from Coursera or other MOOCs.
+   - Leadership roles and experiences; leadership should not be considered important for early-career resumes.
+   - Grades from before university (highschool grades) do not matter.
+   - How far into the degree the candidate is; it doesn't matter if they are a graduate or still in university.
 
-5. Weigh the pros and cons of each resume, considering which candidate is likely to perform better in the role and have more potential for growth.
+5. Consider how well each candidate's background aligns with typical requirements for an early-career software engineering role.
 
-6. After thorough analysis and comparison, form your conclusion about which resume you prefer.
+6. Weigh the pros and cons of each resume, considering which candidate is likely to perform better in the role and have more potential for growth.
 
-7. Explain your reasoning in detail, covering all the points you considered in your decision-making process.
+7. After thorough analysis and comparison, form your conclusion about which resume you prefer.
 
-8. Only after providing your complete analysis and reasoning, state your final decision by writing either "I prefer Resume A" or "I prefer Resume B" as the very last line of your response.
+8. Explain your reasoning in detail, covering all the points you considered in your decision-making process.
+
+9. Only after providing your complete analysis and reasoning, state your final decision by writing either "I prefer Resume A" or "I prefer Resume B" as the very last line of your response.
 
 Remember, your goal is to provide a comprehensive comparison and justification for your choice before stating your final preference."""
 
@@ -133,9 +139,6 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
         print("Comparing resumes...")
 
         def call_claude():
-            print(f'{mediatype_A=}, {mediatype_A=}')
-            print(f'{self.current_resumes['Resume A']['filename']=}')
-
             return self.client.messages.create(
             model = self.SONNET if self.model == 'sonnet' else self.HAIKU,
             max_tokens=2000,
@@ -188,8 +191,6 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
                 mediatype_A = 'image/jpeg' if mediatype_A == 'image/png' else 'image/png'
             else:
                 mediatype_B = 'image/jpeg' if mediatype_B == 'image/png' else 'image/png'
-
-            print(f'downstairs: {mediatype_A=}, {mediatype_B=}')
 
             # Signal that rename is required
             self.should_swap_mediatype = True
