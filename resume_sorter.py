@@ -41,6 +41,19 @@ class ResumeSorter:
             # Determine initial direction
             if first_comparison_is_win == None:
                 comparison = self._bon_with_ranked_at_curr(self.current_rank, n=3)
+
+                # There might have been a filetype error; change .jpg to .png (or vice versa)
+                if self.resume_comparer.should_swap_mediatype:
+                    old_directory = f'./{self.resume_folder}/unranked/{self.to_be_ranked_filename}'
+                    mediatype = self.to_be_ranked_filename[-3:]
+                    filename = self.to_be_ranked_filename[:-3]
+                    mediatype = 'png' if mediatype == 'jpg' else 'jpg'
+
+                    self.to_be_ranked_filename = filename + mediatype
+                    new_directory = f'./{self.resume_folder}/unranked/{self.to_be_ranked_filename}'
+
+                    os.rename(old_directory, new_directory)
+                    
                 first_comparison_is_win = self._is_winner_to_be_ranked(comparison)
                 print('first: win' if first_comparison_is_win else 'first: loss')
                 # Increment or decrement rank
@@ -214,7 +227,7 @@ class ResumeSorter:
 
 if __name__ == '__main__':
     sorter = ResumeSorter(resume_folder='resumes_us')
-    sorter.unrank_files(9, 10)
+    # sorter.unrank_files(1, 2)
     sorter.insert_all()
 
 """

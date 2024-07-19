@@ -1,6 +1,7 @@
 import anthropic
 import base64
 from random import randint
+import os
 
 class LLMResumeComparer:
     PROMPT = """You are an expert software engineering recruiter tasked with comparing two resumes for an early-career software engineering position. Your goal is to analyze both resumes thoroughly and determine which candidate would be a better fit for the role.
@@ -80,6 +81,8 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
 
         self.num_calls = {'haiku': 0, 'sonnet': 0}
 
+        self.should_swap_mediatype = False
+
     def get_image_data(self, ranked: bool, image_filename):
         path = f'./{self.resume_folder}/{'ranked' if ranked else 'unranked'}/{image_filename}' # e.g. ./unranked/CV.png
 
@@ -129,47 +132,70 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
 
         print("Comparing resumes...")
 
-        message = self.client.messages.create(
-        model = self.SONNET if self.model == 'sonnet' else self.HAIKU,
-        max_tokens=2000,
-        temperature=self.temperature,
-        messages=[
-            {
+        def call_claude():
+            print(f'{mediatype_A=}, {mediatype_A=}')
+            print(f'{self.current_resumes['Resume A']['filename']=}')
 
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "Resume A:"
-                    },
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": mediatype_A,
-                            "data": self.current_resumes['Resume A']['data']
+            return self.client.messages.create(
+            model = self.SONNET if self.model == 'sonnet' else self.HAIKU,
+            max_tokens=2000,
+            temperature=self.temperature,
+            messages=[
+                {
+
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Resume A:"
+                        },
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": mediatype_A,
+                                "data": self.current_resumes['Resume A']['data']
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "text": "Resume B:"
+                        },
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": mediatype_B,
+                                "data": self.current_resumes['Resume B']['data']
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "text": self.PROMPT
                         }
-                    },
-                    {
-                        "type": "text",
-                        "text": "Resume B:"
-                    },
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": mediatype_B,
-                            "data": self.current_resumes['Resume B']['data']
-                        }
-                    },
-                    {
-                        "type": "text",
-                        "text": self.PROMPT
-                    }
-                ]
-            }
-        ]
-    )
+                    ]
+                }
+            ]
+        )
+
+        try:
+            self.should_swap_mediatype = False
+            message = call_claude()
+        except:
+            # Error is most likely because mediatype was wrong
+            if self.to_be_ranked_is_A:
+                # Switch jpeg to png or vice versa
+                mediatype_A = 'image/jpeg' if mediatype_A == 'image/png' else 'image/png'
+            else:
+                mediatype_B = 'image/jpeg' if mediatype_B == 'image/png' else 'image/png'
+
+            print(f'downstairs: {mediatype_A=}, {mediatype_B=}')
+
+            # Signal that rename is required
+            self.should_swap_mediatype = True
+
+            # Retry
+            message = call_claude()
         
         if 'prefer resume a' in message.content[0].text.lower():
             winner = 'Resume A'
