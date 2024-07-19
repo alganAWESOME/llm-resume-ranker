@@ -1,6 +1,7 @@
 from resume_comparer import LLMResumeComparer
 from rankstring import RankString
 import os
+import json
 
 class ResumeSorter:
     """
@@ -181,6 +182,25 @@ class ResumeSorter:
         rank = self.find_rank()
         self.insert_unranked_file(rank)
 
+    def _update_usage_json(self, num_calls):
+        """
+        usage.json stores how many times each model was called.
+        This function updates the json at the end of `insert_all()`.
+        """
+        filepath = f'{self.resume_folder}/usage.json'
+
+        with open(filepath, 'r') as file:
+            usage_data = json.load(file)
+
+        for key, value in num_calls.items():
+            if key in usage_data['num_calls']:
+                usage_data['num_calls'][key] += value
+            else:
+                usage_data['num_calls'][key] = value
+
+        with open(filepath, 'w') as file:
+            json.dump(usage_data, file, indent=4)
+
     def insert_all(self):
         for filename in os.listdir(f'./{self.resume_folder}/unranked'):  
             self.insert(filename)
@@ -188,11 +208,13 @@ class ResumeSorter:
                 self.read_ranked_folder()
                 print(f'ranked_files={self.ranked_filenames}')
         
-        print(f'num_calls={self.resume_comparer.num_calls}')
+        num_calls = self.resume_comparer.num_calls
+        print(f'num_calls={num_calls}')
+        self._update_usage_json(num_calls)
 
 if __name__ == '__main__':
     sorter = ResumeSorter(resume_folder='resumes_us')
-    # sorter.unrank_files(11, 12)
+    sorter.unrank_files(9, 10)
     sorter.insert_all()
 
 """
