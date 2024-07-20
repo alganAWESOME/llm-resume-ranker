@@ -3,30 +3,12 @@
 Claude repeatedly compares two resumes until a list of resumes are sorted. Example comparison:
 
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        .image-container {
-            display: flex;
-        }
-        .image-container img {
-            margin: 5px;
-            max-width: 40%;
-            height: auto;
-        }
-    </style>
-    <title>Side by Side Images</title>
-</head>
-<body>
-    <div class="image-container">
-        <img src="test_resumes/ranked/001-resume_test_update.jpg" alt="Resume A">
-        <img src="test_resumes/ranked/000-jorge.png" alt="Resume B">
-    </div>
-</body>
-</html>
+
+<img src="test_resumes/ranked/001-resume_test_update.jpg" alt="Resume A" width="400"/>
+
+
+<img src="test_resumes/ranked/000-jorge.png" alt="Resume B" width="400"/>
+
 
 Claude response:
 
