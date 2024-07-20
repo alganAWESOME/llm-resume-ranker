@@ -265,7 +265,7 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
     
 if __name__ == "__main__":
     resume_comparer = LLMResumeComparer(resume_folder='test_resumes', model='sonnet', temperature=0)
-    comparison = resume_comparer.best_of_n(3, '000-aaaresume2.png', '001-resume_test_update.jpg')
+    comparison = resume_comparer.best_of_n(1, '000-jorge.png', '001-resume_test_update.jpg')
 
 """
 BACKLOG

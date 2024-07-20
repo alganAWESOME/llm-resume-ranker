@@ -226,8 +226,10 @@ class ResumeSorter:
         self._update_usage_json(num_calls)
 
 if __name__ == '__main__':
-    sorter = ResumeSorter(resume_folder='resumes_us')
-    sorter.unrank_files(0,1)
+    RESUME_FOLDER = 'resumes_us'
+
+    sorter = ResumeSorter(RESUME_FOLDER)
+    # sorter.unrank_files(0,1)
     sorter.insert_all()
 
 """

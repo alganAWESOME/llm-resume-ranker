@@ -3,3 +3,6 @@ __pycache__/
 storage/
 resumes*/
 notes.md
+resume_default_folder/ranked/*
+resume_default_folder/unranked/*
+resume_default_folder/storage/*
