@@ -226,11 +226,11 @@ class ResumeSorter:
         self._update_usage_json(num_calls)
 
 if __name__ == '__main__':
-    RESUME_FOLDER = 'resumes_us'
+    RESUME_FOLDER = 'resumes_uk copy'
 
     sorter = ResumeSorter(RESUME_FOLDER)
-    # sorter.unrank_files(0,1)
-    sorter.insert_all()
+    sorter.unrank_files()
+    # sorter.insert_all()
 
 """
 BACKLOG

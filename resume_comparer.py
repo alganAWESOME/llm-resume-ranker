@@ -13,7 +13,7 @@ Please follow these steps:
 2. For each resume, list the key strengths and potential weaknesses or areas of concern.
 
 3. Compare the resumes based on the following criteria:
-   - Relevance and recency of work experience
+   - Relevance and and amount of work experience
    - Depth and breadth of technical skills
    - Education and academic performance
    - Project experience and its relevance to software engineering
@@ -21,10 +21,10 @@ Please follow these steps:
    - Any unique qualities or experiences that stand out
 
 4. Furthermore, the following are negative criteria, which should be discarded or treated as less relevant factors:
-   - Certifications, such as those from Coursera or other MOOCs.
-   - Leadership roles and experiences; leadership should not be considered important for early-career resumes.
-   - Grades from before university (highschool grades) do not matter.
-   - How far into the degree the candidate is; it doesn't matter if they are a graduate or still in university.
+   - IGNORE Certifications, such as those from Coursera or other MOOCs.
+   - IGNORE Leadership roles and extracurricular activities.
+   - IGNORE Grades from before university (highschool grades).
+   - IGNORE How far into the degree the candidate is; it doesn't matter if they are a graduate, near graduation or still a few years away from graduation.
 
 5. Consider how well each candidate's background aligns with typical requirements for an early-career software engineering role.
 
