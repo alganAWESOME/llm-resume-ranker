@@ -1,4 +1,4 @@
-class RankString:
+class FilenameManager:
     """
     A bunch of useful functions for dealing with the rank-based
     naming convention of the files.
@@ -29,7 +29,13 @@ class RankString:
     @staticmethod
     def get_rankstring(filename):
         """123-my_filename.png -> (123, my_filename.png)"""
-        return filename[:3], filename[4:]
+        rankstring = ""
+        i = 0
+        while filename[i] != '-':
+            rankstring += filename[i]
+            i += 1
+
+        return rankstring, filename[i+1:]
     
     def increment_ranked_filename(self, filename, by=1):
         rankstring, og_filename = self.get_rankstring(filename)
@@ -52,3 +58,13 @@ class RankString:
         rankstring1,  _ = self.get_rankstring(filename1)
         rankstring2, _ = self.get_rankstring(filename2)
         return int(rankstring1) == int(rankstring2) - 1
+    
+if __name__ == "__main__":
+    mgr = FilenameManager()
+    x = "test_string"
+    x = mgr.add_rankstring_to_filename(x, 1500)
+    assert x == '1500-test_string'
+
+    rankstring, filename = mgr.get_rankstring(x)
+    assert rankstring == '1500'
+    assert filename == "test_string", f'{filename=}'
