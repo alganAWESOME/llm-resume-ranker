@@ -1,7 +1,7 @@
 import os
 import json
 from filename_manager import FilenameManager
-from resume_ratings_manager import RatingManager
+from resume_rating_manager import RatingManager
 
 class ResumeManager:
     """
@@ -20,7 +20,7 @@ class ResumeManager:
 
         self._read_ranked_folder()
 
-        self.ratings_mgr = RatingManager(self.ranked_filenames)
+        self.ratings_mgr = RatingManager(resume_folder, self.ranked_filenames)
         self.filename_mgr = FilenameManager()
 
     def update_ratings(self, num_matches=None):
@@ -118,7 +118,7 @@ class ResumeManager:
 
 if __name__ == "__main__":
     mgr = ResumeManager('resumes_uk_copy')
-    # mgr.unrank_files()
-    # mgr.init_unranked()
+    mgr.unrank_files()
+    mgr.init_unranked()
     mgr.update_ratings()
-    #mgr.unrank_files()
+    

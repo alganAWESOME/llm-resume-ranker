@@ -1,4 +1,4 @@
-from resume_ratings_manager import RatingManager
+from resume_rating_manager import RatingManager
 from resume_manager import ResumeManager
 from unittest.mock import patch
 import pytest
@@ -9,7 +9,8 @@ import glicko2
 @pytest.fixture(scope='class')
 def my_fixture():
     resume_mgr = ResumeManager('for_testing_resume_manager')
-    rating_mgr = RatingManager(resume_mgr.ranked_filenames)
+    rating_mgr = RatingManager('for_testing_resume_manager',
+                               resume_mgr.ranked_filenames)
 
     return resume_mgr, rating_mgr
 

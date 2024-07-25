@@ -1,12 +1,15 @@
 import glicko2
 import random
 from filename_manager import FilenameManager
+from resume_comparer import LLMResumeComparer
 
 class RatingManager:
-    def __init__(self, ranked_resumes):
+    def __init__(self, resume_folder, ranked_resumes):
+        self.resume_folder = resume_folder
         self.ranked_resumes = ranked_resumes
         self.num_ranked_res = len(ranked_resumes)
         self.filename_mgr = FilenameManager()
+        self.llm = LLMResumeComparer(resume_folder, model='haiku')
 
     def update_ratings(self, ratings_data, num_matches=None):
         matches = self._generate_matches(self.num_ranked_res, num_matches)
@@ -48,9 +51,9 @@ class RatingManager:
 
         for a, b in matches:
             resume1, resume2 = self.ranked_resumes[a], self.ranked_resumes[b]
+            winner = self._compare_resumes(resume1, resume2)
             resume1 = self.filename_mgr.rm_rankstring(resume1)
             resume2 = self.filename_mgr.rm_rankstring(resume2)
-            winner = self._compare_resumes(resume1, resume2)
 
             if resume1 not in match_results:
                 match_results[resume1] = ([], [], [])
@@ -75,7 +78,6 @@ class RatingManager:
         # convert ratings data into a dict of glicko players
         # {"resume.png": Player()}
         glicko_players = {}
-        print(f'{ratings_data=}')
         for resume, data in ratings_data.items():
             glicko_players[resume] = glicko2.Player(data['rating'], data['rd'], data['vol'])
 
@@ -90,34 +92,18 @@ class RatingManager:
         return ratings_data
 
     def _compare_resumes(self, resume1, resume2):
+        llm_response = self.llm.compare_resumes(resume1, resume2)
+        self.llm.pretty_print(llm_response)
+
+        if llm_response['resume1'] == llm_response['winner']:
+            return 1
+        else:
+            return 2
         
-        return 1 if resume1 < resume2 else 2
-
 if __name__ == "__main__":
-    # # Feb222012 example.
-    # P1 = glicko2.Player()
-    # print(f'{P1.rating=}, {P1.rd=}')
-    # P1.setRd(200)
-    # P1.update_player([1400, 1550, 1700], [30, 100, 300], [1, 0, 0])
-    # # Original Ryan example.
-    # Ryan = glicko2.Player()
-    # print(f'{Ryan.rating=}, {Ryan.rd=}')
-    # Ryan.update_player([1400, 1550, 1700],
-    #     [30, 100, 300], [1, 1, 1])
-    
-    # print('update done')
-
-    # print(f'{P1.rating=}, {P1.rd=}')
-    # print(f'{Ryan.rating=}, {Ryan.rd=}')
-
-    
     num_matches = lambda n : n * (n - 1) // 2
-
-    print(num_matches(20))
+    # print(num_matches(20))
 
     # testing lol
     mgr = RatingManager('')
     assert mgr.generate_matches(3, 3) == [[0, 1], [0, 2], [1, 2]]
-
-
-    

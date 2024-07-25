@@ -1,7 +1,6 @@
 import anthropic
 import base64
 from random import randint
-import os
 
 class LLMResumeComparer:
     PROMPT = """You are an expert software engineering recruiter tasked with comparing two resumes for an early-career software engineering position. Your goal is to analyze both resumes thoroughly and determine which candidate would be a better fit for the role.
@@ -38,44 +37,6 @@ Please follow these steps:
 
 Remember, your goal is to provide a comprehensive comparison and justification for your choice before stating your final preference."""
 
-    PROMPTlol = """
-You are an expert in hiring and evaluating software engineers. You have two resumes in front of you, and you need to compare them to determine which candidate is more suitable for a software engineering position. Focus on the following aspects of each resume:
-
-1. Professional Experience
-Look at the job titles, companies, duration of employment, and key responsibilities.
-Assess the relevance and impact of their roles and achievements.
-
-2. Skills and Technologies
-Identify the programming languages, tools, frameworks, and technologies each candidate is proficient in.
-Evaluate the depth and breadth of their technical skills.
-
-3. Projects
-Examine the projects listed, including personal, academic, and professional projects.
-Consider the complexity, innovation, and relevance of these projects to the role they are applying for.
-
-4. Education
-Review their educational background, including degrees, institutions, and relevant coursework.
-Take note of any honors or exceptional academic achievements.
-
-5. Additional Information
-Check for any additional skills, languages spoken, certifications, or interests that might be relevant.
-
-6. Overall Impression
-
-At the start, you should only state your reasoning, without stating your final answer. Only at the very end, you MUST state "I prefer Resume A" or "I prefer Resume B".
-"""
-
-    PROMPT_alt = """You are an expert technical recruiter at a big tech company looking to hire graduate software engineers. Your task is to evaluate the following two early-career software engineer resumes. Only after discussing your reasoning, state which resume you prefer. You may refer to the resumes as Resume A and Resume B respectively.
-
-Criteria for evaluation:
-- Technical depth: how much technical depth and experience does the candidate demonstrate? You should mostly discard non-software engineering experience, e.g. retail or marketing. Furthermore, you must discard A-Level qualifications; they simply do not matter.
-- Clarity of communication: is it easy to understand what exactly the candidate worked on, and what the impact was? Is the candidate using buzzwords that sound out of place?
-- Appearance: the resume should look professional and simple, minimising flashy graphics as much as possible. Is there attention to detail, e.g. good whitespace and flawless spelling?
-- University: universities should be ranked as follows: Oxford/Cambridge, Imperial, Warwick/UCL, other Russell Group, non-Russell Group. Note that some resumes may anonymise their university.
-- Miscellaneous: any other observation as you see fit.
-
-You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
-
     HAIKU = "claude-3-haiku-20240307"
     SONNET = "claude-3-5-sonnet-20240620"
 
@@ -89,29 +50,29 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
 
         self.should_swap_mediatype = False
 
-    def get_image_data(self, ranked: bool, image_filename):
-        path = f'./{self.resume_folder}/{'ranked' if ranked else 'unranked'}/{image_filename}' # e.g. ./unranked/CV.png
+    def get_image_data(self, image_filename):
+        path = f'{self.resume_folder}/ranked/{image_filename}'
 
         with open(path, 'rb') as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
         
-    def construct_resumes_dict(self, unranked_filename, ranked_filename):
-        ranked_data = self.get_image_data(ranked=True, image_filename=ranked_filename)
-        unranked_data = self.get_image_data(ranked=False, image_filename=unranked_filename)
+    def construct_resumes_dict(self, resume1, resume2):
+        data1 = self.get_image_data(image_filename=resume1)
+        data2 = self.get_image_data(image_filename=resume2)
 
         # Are the images jpg or png
         get_image_type = lambda image_filename: 'jpeg' if image_filename.split('.')[1] == 'jpg' else 'png'
-        ranked_type, unranked_type = get_image_type(ranked_filename), get_image_type(unranked_filename)
+        image_type1, image_type2 = get_image_type(resume1), get_image_type(resume2)
 
         # Construct dictionary containing the two resumes
         resumes = {'Resume A': {}, 'Resume B': {}}
-        self.to_be_ranked_is_A = False
-        resumes['Resume A']['filename'] = ranked_filename
-        resumes['Resume A']['data'] = ranked_data
-        resumes['Resume A']['type'] = ranked_type
-        resumes['Resume B']['filename'] = unranked_filename
-        resumes['Resume B']['data'] = unranked_data
-        resumes['Resume B']['type'] = unranked_type
+        self.A_is_1 = True
+        resumes['Resume A']['filename'] = resume1
+        resumes['Resume A']['data'] = data1
+        resumes['Resume A']['type'] = image_type1
+        resumes['Resume B']['filename'] = resume2
+        resumes['Resume B']['data'] = data2
+        resumes['Resume B']['type'] = image_type2
 
         self.current_resumes = resumes
 
@@ -122,16 +83,13 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
             temp = self.current_resumes['Resume A']
             self.current_resumes['Resume A'] = self.current_resumes['Resume B']
             self.current_resumes['Resume B'] = temp
-            self.to_be_ranked_is_A = not self.to_be_ranked_is_A
+            self.A_is_1 = not self.A_is_1
 
     def compare_resumes_with_llm(self):
         # Update num_calls
         self.num_calls[self.model] += 1
 
         self.randomise_resumes()
-
-        # print(f'name={self.current_resumes['Resume A']['filename']}, type={self.current_resumes['Resume A']['type']}')
-        # print(f'name={self.current_resumes['Resume B']['filename']}, type={self.current_resumes['Resume B']['type']}')
 
         mediatype_A = f"image/{self.current_resumes['Resume A']['type']}"
         mediatype_B = f"image/{self.current_resumes['Resume B']['type']}"
@@ -186,7 +144,7 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
             message = call_claude()
         except:
             # Error is most likely because mediatype was wrong
-            if self.to_be_ranked_is_A:
+            if self.A_is_1:
                 # Switch jpeg to png or vice versa
                 mediatype_A = 'image/jpeg' if mediatype_A == 'image/png' else 'image/png'
             else:
@@ -212,7 +170,7 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
         return {'Resume A': self.current_resumes['Resume A']['filename'],
                  'Resume B': self.current_resumes['Resume B']['filename'],
                  'winner': winner, # "Resume A" or "Resume B"
-                 'to_be_ranked_resume': 'Resume A' if self.to_be_ranked_is_A else 'Resume B',
+                 'resume1': 'Resume A' if self.A_is_1 else 'Resume B',
                  'claude_response': message.content[0].text}
 
     @staticmethod
@@ -259,8 +217,8 @@ You MUST end your response with 'I prefer Resume A' or 'I prefer Resume B'."""
                 print(f'Loss; wins={to_be_ranked_wins}, losses={to_be_ranked_losses}')
                 return loss_comparison
 
-    def main(self, unranked_filename, ranked_filename):
-        self.construct_resumes_dict(unranked_filename, ranked_filename)
+    def compare_resumes(self, resume1, resume2):
+        self.construct_resumes_dict(resume1, resume2)
         return self.compare_resumes_with_llm()
     
 if __name__ == "__main__":
