@@ -10,13 +10,15 @@ class RatingManager:
         self.num_ranked_res = len(ranked_resumes)
         self.filename_mgr = FilenameManager()
         self.llm = LLMResumeComparer(resume_folder, model='haiku')
+        self.comparisons = []
 
     def update_ratings(self, ratings_data, num_matches=None):
         matches = self._generate_matches(self.num_ranked_res, num_matches)
         match_results = self._play_matches(matches, ratings_data)
+        print(f'{match_results=}')
         new_ratings_data = self._update_ratings(match_results, ratings_data)
 
-        return new_ratings_data
+        return new_ratings_data, self.comparisons
     
     def _generate_matches(self, n, num_matches=None):
         """
@@ -28,7 +30,7 @@ class RatingManager:
             num_matches = max_num_matches
         
         if num_matches > max_num_matches:
-            raise ValueError('too many matches')
+            raise ValueError(f'too many matches; maximum is {max_num_matches}')
         
         # Shortcut
         if num_matches == max_num_matches:
@@ -78,12 +80,17 @@ class RatingManager:
         # convert ratings data into a dict of glicko players
         # {"resume.png": Player()}
         glicko_players = {}
-        for resume, data in ratings_data.items():
+        # for resume, data in ratings_data.items():
+        #     glicko_players[resume] = glicko2.Player(data['rating'], data['rd'], data['vol'])
+
+        for resume in match_results:
+            data = ratings_data[resume]
             glicko_players[resume] = glicko2.Player(data['rating'], data['rd'], data['vol'])
 
         # update ratings_data
-        for resume, player in glicko_players.items():
-            opp_ratings, opp_rds, wins = match_results[resume]
+        for resume, match_data in match_results.items():
+            opp_ratings, opp_rds, wins = match_data
+            player = glicko_players[resume]
             player.update_player(opp_ratings, opp_rds, wins)
             ratings_data[resume]["rating"] = player.getRating()
             ratings_data[resume]["rd"] = player.getRd()
@@ -94,6 +101,7 @@ class RatingManager:
     def _compare_resumes(self, resume1, resume2):
         llm_response = self.llm.compare_resumes(resume1, resume2)
         self.llm.pretty_print(llm_response)
+        self.comparisons.append(llm_response)
 
         if llm_response['resume1'] == llm_response['winner']:
             return 1

@@ -29,11 +29,20 @@ class ResumeManager:
             ratings_data = json.load(f)
 
         # Play matches
-        new_ratings_data = self.ratings_mgr.update_ratings(ratings_data, num_matches)
+        new_ratings_data, comparisons = self.ratings_mgr.update_ratings(ratings_data, num_matches)
+        print(f'{len(comparisons)=}')
 
-        # Update JSON
+        # Update ratings JSON
         with open(f'{self.resume_fol}/ratings.json', 'w') as f:
             json.dump(new_ratings_data, f, indent=4)
+
+        # Update comparisons JSON
+        with open(f'{self.resume_fol}/comparisons.json', 'r') as f:
+            comparisons_json = json.load(f)
+            comparisons_json += comparisons
+        
+        with open(f'{self.resume_fol}/comparisons.json', 'w') as f:
+            json.dump(comparisons_json, f, indent=4)
 
         # Update filenames
         for resume in self.ranked_filenames:
@@ -109,7 +118,8 @@ class ResumeManager:
             os.rename(f'./{self.ranked_fol}/{filename}',
                       f'./{self.unranked_fol}/{new_filename}')      
             # Delete data
-            ratings_data.pop(new_filename)
+            if new_filename in ratings_data:
+                ratings_data.pop(new_filename)
             print(f'Unranked {filename}')
 
         # Write JSON
@@ -117,8 +127,11 @@ class ResumeManager:
             json.dump(ratings_data, f, indent=4)
 
 if __name__ == "__main__":
-    mgr = ResumeManager('resumes_uk_copy')
-    mgr.unrank_files()
-    mgr.init_unranked()
-    mgr.update_ratings()
+    mgr = ResumeManager('resumes_uk')
+
+    # mgr.unrank_files()
+    # mgr.init_unranked()
+    mgr.update_ratings(num_matches=1)
+    
+
     
