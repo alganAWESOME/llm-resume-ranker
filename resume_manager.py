@@ -1,25 +1,7 @@
 import os
 import json
-from filename_mgr import FilenameManager
-
-# "initialise" method:
-# takes resumes from unranked folder and gives default (1500) rating
-
-# create glicko2.Player() objects for each resume in the folder
-# meaning there needs to be a `ratings.json` file
-# stores {"<filename>": {"rating": 1500, "sd": 26}} etc
-
-# okay suppose we have all the Player() objects we need...
-# pick n unique pairings
-# find winner and update rank
-
-# FileManager
-# reads from json file
-# sends relevant info to RatingsManager
-
-# RatingManager
-# Constructs Player() objects
-# sends new ratings to FileManager
+from filename_manager import FilenameManager
+from resume_ratings_manager import RatingManager
 
 class ResumeManager:
     """
@@ -36,14 +18,37 @@ class ResumeManager:
         self.unranked_fol = f'./{self.resume_fol}/unranked'
         self.ranked_fol = f'./{self.resume_fol}/ranked'
 
+        self._read_ranked_folder()
+
+        self.ratings_mgr = RatingManager(self.ranked_filenames)
         self.filename_mgr = FilenameManager()
 
-    def init_unranked(self):
-        self.init_unranked_into_json()
-        self.init_unranked_into_ranked()
+    def update_ratings(self, num_matches=None):
+        """Get new match data, then update ratings.json and filenames."""
+        with open(f'{self.resume_fol}/ratings.json', 'r') as f:
+            ratings_data = json.load(f)
 
-    def init_unranked_into_json(self):
-        """Adds unranked resumes into `ratings.json`"""
+        # Play matches
+        new_ratings_data = self.ratings_mgr.update_ratings(ratings_data, num_matches)
+
+        # Update JSON
+        with open(f'{self.resume_fol}/ratings.json', 'w') as f:
+            json.dump(new_ratings_data, f, indent=4)
+
+        # Update filenames
+        for resume in self.ranked_filenames:
+            old_rating, filename = self.filename_mgr.get_rankstring(resume)
+            new_rating = new_ratings_data[filename]['rating']
+            new_rating = int(new_rating)
+            os.rename(f'{self.ranked_fol}/{old_rating}-{filename}',
+                      f'{self.ranked_fol}/{new_rating}-{filename}')
+
+    def init_unranked(self):
+        """
+        Adds unranked resumes into `ratings.json`.
+        Adds rankstring into filename and moves un-initialised
+        files into the ranked folder.
+        """
 
         filepath = f'{self.resume_fol}/ratings.json'
         with open(filepath, 'r') as f:
@@ -55,21 +60,18 @@ class ResumeManager:
                 print("Skipping...")
                 continue
 
+            # Add data to json
             ratings_data[filename] = {"rating": self.RATING_DEFAULT,
                                           "rd": self.RD_DEFAULT,
                                           "vol": self.VOL_DEFAULT}
             
-        with open(filepath, 'w') as f:
-            json.dump(ratings_data, f, indent=4)
-            
-    def init_unranked_into_ranked(self):
-        """Adds rankstring into filename and moves un-initialised
-        files into the ranked folder"""
-
-        for filename in os.listdir(self.unranked_fol):
+            # Move file
             new_filename = self.filename_mgr.add_rankstring_to_filename(filename, self.RATING_DEFAULT)
             os.rename(f'{self.unranked_fol}/{filename}',
                       f'{self.ranked_fol}/{new_filename}')
+            
+        with open(filepath, 'w') as f:
+            json.dump(ratings_data, f, indent=4)
             
     def _read_ranked_folder(self):
         self.ranked_filenames = os.listdir(self.ranked_fol)
@@ -103,7 +105,7 @@ class ResumeManager:
         for i in range(idx_low, idx_high):
             # Move files
             filename = self.ranked_filenames[i]
-            new_filename = self.filename_mgr.rm_rankstring_from_filename(filename)
+            new_filename = self.filename_mgr.rm_rankstring(filename)
             os.rename(f'./{self.ranked_fol}/{filename}',
                       f'./{self.unranked_fol}/{new_filename}')      
             # Delete data
@@ -116,6 +118,7 @@ class ResumeManager:
 
 if __name__ == "__main__":
     mgr = ResumeManager('resumes_uk_copy')
-    mgr.init_unranked()
+    # mgr.unrank_files()
+    # mgr.init_unranked()
+    mgr.update_ratings()
     #mgr.unrank_files()
-

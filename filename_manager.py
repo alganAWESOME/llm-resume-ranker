@@ -49,7 +49,7 @@ class FilenameManager:
     def add_rankstring_to_filename(self, filename, rank):
         return f'{self.string_from_rank(rank)}-{filename}'
     
-    def rm_rankstring_from_filename(self, filename):
+    def rm_rankstring(self, filename):
         """012-my_bad_cv.png -> my_bad_cv.png"""
         return self.get_rankstring(filename)[1]
     
