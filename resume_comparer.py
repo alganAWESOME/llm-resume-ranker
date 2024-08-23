@@ -11,15 +11,15 @@ Please follow these steps:
 
 2. For each resume, list the key strengths and potential weaknesses or areas of concern.
 
-3. Compare the resumes based on the following criteria:
+3. Compare the resumes based on the following criteria, sorted from most relevant to least relevant:
    - Relevance and and amount of work experience
    - Depth and breadth of technical skills
    - Education and academic performance
    - Project experience and its relevance to software engineering
    - Evidence of problem-solving abilities and initiative
-   - Any unique qualities or experiences that stand out
 
 4. Furthermore, the following are negative criteria, which should be discarded or treated as less relevant factors:
+   - IGNORE Work experience that is not directly relevant to software engineering, such as retail jobs.
    - IGNORE Certifications, such as those from Coursera or other MOOCs.
    - IGNORE Leadership roles and extracurricular activities.
    - IGNORE Grades from before university (highschool grades).
@@ -182,48 +182,50 @@ Remember, your goal is to provide a comprehensive comparison and justification f
             else:
                 print(f'{key}: {value}')
     
-    def best_of_n(self, n, unranked_filename, ranked_filename):
-        """Make LLM compare resumes best-of-n style.
-        The return format is identical to a regular comparison for now."""
-        if n % 2 == 0:
-            raise ValueError('n must be odd for best of n')
-        wins_required = (n + 1) // 2
+    # Does not work:
+    # def best_of_n(self, n, unranked_filename, ranked_filename):
+    #     """Make LLM compare resumes best-of-n style.
+    #     The return format is identical to a regular comparison for now."""
+    #     if n % 2 == 0:
+    #         raise ValueError('n must be odd for best of n')
+    #     wins_required = (n + 1) // 2
 
-        print(f"Starting best of {n} comparison")
+    #     print(f"Starting best of {n} comparison")
 
-        self.construct_resumes_dict(unranked_filename, ranked_filename)
+    #     self.construct_resumes_dict(unranked_filename, ranked_filename)
 
-        to_be_ranked_wins, to_be_ranked_losses = 0, 0
+    #     to_be_ranked_wins, to_be_ranked_losses = 0, 0
 
-        # Store one comparison where to_be_ranked wins, one where it loses
-        win_comparison, loss_comparison = None, None
+    #     # Store one comparison where to_be_ranked wins, one where it loses
+    #     win_comparison, loss_comparison = None, None
         
-        for _ in range(n):
-            comparison = self.compare_resumes_with_llm()
-            if comparison['to_be_ranked_resume'] == comparison['winner']:
-                to_be_ranked_wins += 1
-                win_comparison = comparison
-            else:
-                to_be_ranked_losses += 1
-                loss_comparison = comparison
+    #     for _ in range(n):
+    #         comparison = self.compare_resumes_with_llm()
+    #         if comparison['to_be_ranked_resume'] == comparison['winner']:
+    #             to_be_ranked_wins += 1
+    #             win_comparison = comparison
+    #         else:
+    #             to_be_ranked_losses += 1
+    #             loss_comparison = comparison
 
-            self.pretty_print(comparison)
+    #         self.pretty_print(comparison)
 
-            if to_be_ranked_wins == wins_required:
-                print(f'Win; wins={to_be_ranked_wins}, losses={to_be_ranked_losses}')
-                return win_comparison
+    #         if to_be_ranked_wins == wins_required:
+    #             print(f'Win; wins={to_be_ranked_wins}, losses={to_be_ranked_losses}')
+    #             return win_comparison
             
-            if to_be_ranked_losses == wins_required:
-                print(f'Loss; wins={to_be_ranked_wins}, losses={to_be_ranked_losses}')
-                return loss_comparison
+    #         if to_be_ranked_losses == wins_required:
+    #             print(f'Loss; wins={to_be_ranked_wins}, losses={to_be_ranked_losses}')
+    #             return loss_comparison
 
     def compare_resumes(self, resume1, resume2):
         self.construct_resumes_dict(resume1, resume2)
         return self.compare_resumes_with_llm()
     
 if __name__ == "__main__":
-    resume_comparer = LLMResumeComparer(resume_folder='test_resumes', model='sonnet', temperature=0)
-    comparison = resume_comparer.best_of_n(1, '000-jorge.png', '001-resume_test_update.jpg')
+    resume_comparer = LLMResumeComparer(resume_folder='resumes_uk', model='haiku', temperature=0)
+    comparison = resume_comparer.compare_resumes('1376-remers.png', '1311-bark.png')
+    resume_comparer.pretty_print(comparison)
 
 """
 BACKLOG

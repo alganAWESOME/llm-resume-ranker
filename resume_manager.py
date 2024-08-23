@@ -1,5 +1,6 @@
 import os
 import json
+import imghdr
 from filename_manager import FilenameManager
 from resume_rating_manager import RatingManager
 
@@ -30,7 +31,6 @@ class ResumeManager:
 
         # Play matches
         new_ratings_data, comparisons = self.ratings_mgr.update_ratings(ratings_data, num_matches)
-        print(f'{len(comparisons)=}')
 
         # Update ratings JSON
         with open(f'{self.resume_fol}/ratings.json', 'w') as f:
@@ -52,6 +52,18 @@ class ResumeManager:
             os.rename(f'{self.ranked_fol}/{old_rating}-{filename}',
                       f'{self.ranked_fol}/{new_rating}-{filename}')
 
+    @staticmethod
+    def _correct_filetype(file_path, filename):
+        """Corrects filenames with '.png' that are actually jpeg (and vice versa)"""
+        file_type_claimed = filename[-3:]
+        file_type_actual = imghdr.what(file_path)
+        if file_type_claimed == 'png' and file_type_actual == 'jpeg':
+            return filename[:-3] + 'jpg'
+        elif file_type_claimed == 'jpg' and file_type_actual == 'png':
+            return filename[:-3] + 'png'
+
+        return filename
+    
     def init_unranked(self):
         """
         Adds unranked resumes into `ratings.json`.
@@ -64,18 +76,29 @@ class ResumeManager:
             ratings_data = json.load(f)
 
         for filename in os.listdir(self.unranked_fol):
-            if filename in ratings_data:
-                print(f'File named "{filename}" is already initialised in ratings.json')
+            file_path = f'{self.unranked_fol}/{filename}'
+
+            # Claude only supports images of size < 5mb
+            file_size = os.path.getsize(file_path) / (1024 * 1024)  # Convert to MB
+            if file_size > 5:
+                print(f'Resume "{filename}" is too large, skipping...')
+                continue
+
+            # Change '.jpg' to '.png' if needed
+            new_filename = self._correct_filetype(file_path, filename)
+
+            if new_filename in ratings_data:
+                print(f'Resume "{filename}" is already initialised in ratings.json')
                 print("Skipping...")
                 continue
 
             # Add data to json
-            ratings_data[filename] = {"rating": self.RATING_DEFAULT,
+            ratings_data[new_filename] = {"rating": self.RATING_DEFAULT,
                                           "rd": self.RD_DEFAULT,
                                           "vol": self.VOL_DEFAULT}
             
             # Move file
-            new_filename = self.filename_mgr.add_rankstring_to_filename(filename, self.RATING_DEFAULT)
+            new_filename = self.filename_mgr.add_rankstring_to_filename(new_filename, self.RATING_DEFAULT)
             os.rename(f'{self.unranked_fol}/{filename}',
                       f'{self.ranked_fol}/{new_filename}')
             
@@ -129,9 +152,21 @@ class ResumeManager:
 if __name__ == "__main__":
     mgr = ResumeManager('resumes_uk')
 
-    # mgr.unrank_files()
-    # mgr.init_unranked()
-    mgr.update_ratings(num_matches=1)
+    # mgr.unrank_files(9, 24)
     
+    # mgr.init_unranked()
+    mgr.update_ratings(num_matches=200)
+
+    # import imghdr
+    # file_path = 'resumes_uk/ranked'
+    # for resume in os.listdir(file_path):
+    #     image_type = imghdr.what(f'{file_path}/{resume}')
+    #     print(f'filename={resume}, {image_type=}')
 
     
+"""
+BACKLOG
+
+- check file size is less than 5mb when initialising
+- check filetype is correct when initialising
+"""

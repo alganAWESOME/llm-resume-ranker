@@ -1,8 +1,11 @@
 __pycache__/
 .pytest_cache/
+notes.md
+# Do not upload people's resumes to github
 storage/
 resumes*/
-notes.md
 resume_default_folder/ranked/*
 resume_default_folder/unranked/*
 resume_default_folder/storage/*
+test_resumes/ranked/*
+test_resumes/unranked/*

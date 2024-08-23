@@ -51,7 +51,7 @@ class RatingManager:
         # {"resume.png": ([ratings], [rds], [wins])}
         match_results = {}
 
-        for a, b in matches:
+        for i, (a, b) in enumerate(matches):
             resume1, resume2 = self.ranked_resumes[a], self.ranked_resumes[b]
             winner = self._compare_resumes(resume1, resume2)
             resume1 = self.filename_mgr.rm_rankstring(resume1)
@@ -73,6 +73,8 @@ class RatingManager:
             match_results[resume2][0].append(r1_stats['rating'])
             match_results[resume2][1].append(r1_stats['rd'])
             match_results[resume2][2].append(1 if winner == 2 else 0)
+
+            print(f'{i+1}/{len(matches)} matches complete')
 
         return match_results
 
