@@ -63,6 +63,18 @@ class ResumeManager:
             return filename[:-3] + 'png'
 
         return filename
+
+    def correct_filetypes(self, resume_folder=None):
+        """fix a resume folder's incorrect filetypes"""
+        if not resume_folder:
+            resume_folder = self.ranked_fol
+
+        for filename in os.listdir(resume_folder):
+            corrected_filename = self._correct_filetype(f'{resume_folder}/{filename}', filename)
+            if filename != corrected_filename:
+                print(f'corrected {filename} to {corrected_filename}')
+                os.rename(f'{resume_folder}/{filename}',
+                          f'{resume_folder}/{corrected_filename}')
     
     def init_unranked(self):
         """
